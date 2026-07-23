@@ -1,6 +1,5 @@
 import time
 from fetch import get_cookies, decode_cookie
-import secrets
 
 
 def check_authentification(context,page):

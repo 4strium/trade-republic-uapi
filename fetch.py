@@ -45,7 +45,7 @@ def call_tr_rest_api(endpoint: str):
             print(f" Échec ({response.status_code}) : {response.text}")
             return None
 
-async def call_tr_ws_api(command: dict, id: int):
+async def call_tr_ws_api(command: dict, id: int) -> dict | None:
     uri = "wss://api.traderepublic.com/"
 
     cookies = get_cookies()
@@ -87,7 +87,7 @@ async def call_tr_ws_api(command: dict, id: int):
         await ws.send(sub_command)
 
         async for message in ws :
-            parts = message.split(" ", 2)
+            parts = message.split(" ", 2) # type: ignore[reportArgumentType]
             if len(parts) < 3 :
               continue
 
@@ -99,7 +99,6 @@ async def call_tr_ws_api(command: dict, id: int):
                 await ws.send(f"unsub {id}")
 
                 return json.loads(payload)
-                break
 
 
 def decode_cookie(cookie):
