@@ -1,14 +1,16 @@
 import base64
 import json
+import secrets
 
 import httpx
 import websockets
-import secrets
+
 
 def generate_traceparent() -> str:
-  trace_id = secrets.token_hex(16)
-  parent_id = secrets.token_hex(8)
-  return f"00-{trace_id}-{parent_id}-01"
+    trace_id = secrets.token_hex(16)
+    parent_id = secrets.token_hex(8)
+    return f"00-{trace_id}-{parent_id}-01"
+
 
 def get_cookies():
     with open("auth.json", "r") as f:
@@ -45,6 +47,7 @@ def call_tr_rest_api(endpoint: str):
             print(f" Échec ({response.status_code}) : {response.text}")
             return None
 
+
 async def call_tr_ws_api(command: dict, id: int) -> dict | None:
     uri = "wss://api.traderepublic.com/"
 
@@ -63,38 +66,39 @@ async def call_tr_ws_api(command: dict, id: int) -> dict | None:
         "x-aws-waf-token": aws_waf_token,
     }
 
-    async with websockets.connect(uri, additional_headers=headers, user_agent_header="Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0") as ws:
+    async with websockets.connect(
+        uri,
+        additional_headers=headers,
+        user_agent_header="Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0",
+    ) as ws:
         # Init connection :
         connect_payload = {
-                    "locale": "fr",
-                    "platformId": "webtrading",
-                    "platformVersion": "firefox - 152.0.0",
-                    "clientId": "app.traderepublic.com",
-                    "clientVersion": "2.2630.4",
-                    "__headers": {
-                        "traceparent": generate_traceparent()
-                    }
-                }
+            "locale": "fr",
+            "platformId": "webtrading",
+            "platformVersion": "firefox - 152.0.0",
+            "clientId": "app.traderepublic.com",
+            "clientVersion": "2.2630.4",
+            "__headers": {"traceparent": generate_traceparent()},
+        }
 
         connect_cmd = f"connect 34 {json.dumps(connect_payload, separators=(',', ':'))}"
         await ws.send(connect_cmd)
 
-        async for message in ws :
-          if message == "connected":
-            break
+        async for message in ws:
+            if message == "connected":
+                break
 
         sub_command = f"sub {id} {json.dumps(command, separators=(',', ':'))}"
         await ws.send(sub_command)
 
-        async for message in ws :
-            parts = message.split(" ", 2) # type: ignore[reportArgumentType]
-            if len(parts) < 3 :
-              continue
+        async for message in ws:
+            parts = message.split(" ", 2)  # type: ignore[reportArgumentType]
+            if len(parts) < 3:
+                continue
 
             msg_id, msg_type, payload = parts[0], parts[1], parts[2]
 
             if msg_id == str(id) and msg_type in ["A", "D"]:
-
                 # Une fois la donnée reçue, on désabonne et on quitte la boucle
                 await ws.send(f"unsub {id}")
 

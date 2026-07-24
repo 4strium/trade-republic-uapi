@@ -3,6 +3,8 @@ import threading
 import time
 
 import qrcode
+from playwright.sync_api import Error as PlaywrightError
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 
 from api_server import start_api_server
@@ -47,7 +49,7 @@ def keep_alive(page, context):
                 print("Authentification perdue.")
                 context.close()
                 return
-        except Exception as e:
+        except (ConnectionError, TimeoutError) as e:
             print(f"Connexion avec Trade Republic perdue. Erreur: {e}")
             break
 
@@ -102,7 +104,11 @@ def run():
 
                 time.sleep(poll_interval)
 
-        except Exception as e:
+        except PlaywrightTimeoutError:
+            print("Délai dépassé : le QR code n'est pas apparu dans les temps.")
+            context.close()
+            return
+        except (PlaywrightError, ValueError, TypeError) as e:
             print(f"Erreur lors de la capture ou du décodage : {e}")
             context.close()
             return

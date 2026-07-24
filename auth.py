@@ -1,8 +1,9 @@
 import time
-from fetch import get_cookies, decode_cookie
+
+from fetch import decode_cookie, get_cookies
 
 
-def check_authentification(context,page):
+def check_authentification(context, page):
     cookies = get_cookies()
     tr_secret = decode_cookie(cookies.get("tr_claims", ""))
     # print(json.dumps(tr_secret, indent=2, ensure_ascii=False))
