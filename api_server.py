@@ -71,12 +71,25 @@ async def get_accounts_data():
         "__headers": {"traceparent": generate_traceparent()},
     }
 
-    return await call_tr_ws_api(payload, 1)
+    accounts = await call_tr_ws_api(payload, 1)
+    if accounts is None:
+        raise HTTPException(status_code=500, detail="Failed to fetch accounts details")
 
+    return accounts["accounts"]
+
+def complete_order_details(params, payload):
+    if params.mode == "stopMarket":
+        if params.stop is None:
+            raise HTTPException(status_code=400, detail="The stop price is required for stop market orders")
+        payload["parameters"]["stop"] = params.stop
+    elif params.mode == "limit":
+        if params.limit is None:
+            raise HTTPException(status_code=400, detail="The limit price is required for limit orders")
+        payload["parameters"]["limit"] = params.limit
+    
+    return payload
 
 def fix_string(text: str) -> str:
-    if not isinstance(text, str):
-        return text
     try:
         return text.encode("latin-1").decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
@@ -95,14 +108,13 @@ def fix_struct(data):
     else:
         return data
 
-
 @app.get("/api/personal-details")
 def get_personal_details():
     personal_details = call_tr_rest_api("api/v1/customer/personal-details")
     relations = call_tr_rest_api("api/v1/customer/relationships/detailed")
 
     if relations is None or personal_details is None:
-        return personal_details
+        raise HTTPException(status_code=500, detail="Failed to fetch personal details")
 
     for relation in relations["relationships"]:
         if relation["relationshipType"] == "SELF":
@@ -129,7 +141,7 @@ def get_card_details():
     card_infos = call_tr_rest_api("api/v1/card/cards/home")
 
     if card_infos is None:
-        return "{}"
+        raise HTTPException(status_code=500, detail="Failed to fetch card details")
 
     result = {
         "id": card_infos["data"]["card"]["id"],
@@ -154,10 +166,8 @@ def get_card_details():
 @app.get("/api/interests")
 async def get_interests():
     accounts = await get_accounts_data()
-    if accounts is None:
-        return {}
 
-    for account in accounts["accounts"]:
+    for account in accounts:
         if account["productType"] == "DEFAULT":
             interests = call_tr_rest_api(
                 f"api/v1/interest-experience/interest/{account['cashAccountNumber']}/info"
@@ -170,18 +180,15 @@ async def get_interests():
                 )
                 interests["title"] = fix_string(interests["title"])
                 return interests
-            return {}
+            raise HTTPException(status_code=500, detail="Failed to fetch interests details")
 
 
 @app.get("/api/orders")
 async def get_orders():
     accounts = await get_accounts_data()
-    if accounts is None:
-        return {}
-
+    
     result = {}
-
-    for account in accounts["accounts"]:
+    for account in accounts:
         if account["productType"] != "DEFAULT":
             orders = call_tr_rest_api(
                 f"web-trading-gateway/api/customer/v1/orders?sort=orderUpdatedAt,desc&secAccNo={account['securitiesAccountNumber']}&page=1&pageSize=500"
@@ -206,69 +213,62 @@ async def get_transactions():
                 + "/dark.svg"
             )
         return transactions["items"]
-    return {}
+    raise HTTPException(status_code=500, detail="Failed to fetch transactions")
 
 
 @app.get("/api/portfolio")
 async def get_portfolio():
-
     accounts = await get_accounts_data()
+
     result = {}
+    for account in accounts:
+        payload = {
+            "type": "compactPortfolioByTypeV2",
+            "secAccNo": account["securitiesAccountNumber"],
+            "__headers": {"traceparent": generate_traceparent()},
+        }
 
-    if accounts is not None:
-        for account in accounts["accounts"]:
-            payload = {
-                "type": "compactPortfolioByTypeV2",
-                "secAccNo": account["securitiesAccountNumber"],
-                "__headers": {"traceparent": generate_traceparent()},
-            }
+        account_portfolio = await call_tr_ws_api(payload, 22)
 
-            account_portfolio = await call_tr_ws_api(payload, 22)
+        if account_portfolio is not None:
+            for categories in account_portfolio["categories"]:
+                for position in categories["positions"]:
+                    position["imageId"] = (
+                        "https://assets.traderepublic.com/img/"
+                        + position["imageId"]
+                        + "/dark.svg"
+                    )
 
-            if account_portfolio is not None:
-                for categories in account_portfolio["categories"]:
-                    for position in categories["positions"]:
-                        position["imageId"] = (
-                            "https://assets.traderepublic.com/img/"
-                            + position["imageId"]
-                            + "/dark.svg"
-                        )
+                    # Add stock details :
+                    stock_details_payload = {
+                        "type": "stockDetails",
+                        "id": position["isin"],
+                        "jurisdiction": JURISDICTION,
+                        "__headers": {"traceparent": generate_traceparent()},
+                    }
+                    stock_details = await call_tr_ws_api(stock_details_payload, 28)
+                    if stock_details is not None:
+                        position["aggregatedDividends"] = stock_details[
+                            "aggregatedDividends"
+                        ]
+                        position["analystRating"] = stock_details["analystRating"]
+                        position["company"] = stock_details["company"]
+                        position["dividendFrequency"] = stock_details[
+                            "dividendFrequency"
+                        ]
+                        position["dividends"] = stock_details["dividends"]
 
-                        # Add stock details :
-                        stock_details_payload = {
-                            "type": "stockDetails",
-                            "id": position["isin"],
-                            "jurisdiction": JURISDICTION,
-                            "__headers": {"traceparent": generate_traceparent()},
-                        }
-                        stock_details = await call_tr_ws_api(stock_details_payload, 28)
-                        if stock_details is not None:
-                            position["aggregatedDividends"] = stock_details[
-                                "aggregatedDividends"
-                            ]
-                            position["analystRating"] = stock_details["analystRating"]
-                            position["company"] = stock_details["company"]
-                            position["dividendFrequency"] = stock_details[
-                                "dividendFrequency"
-                            ]
-                            position["dividends"] = stock_details["dividends"]
-
-                            fix_struct(position)
-                result[account["securitiesAccountNumber"]] = account_portfolio
+                        fix_struct(position)
+            result[account["securitiesAccountNumber"]] = account_portfolio
 
     return result
 
 
 @app.get("/api/accounts")
 async def get_accounts():
-
     accounts = await get_accounts_data()
-    if accounts is None:
-        return "{}"
 
-    accounts_list = accounts["accounts"]
-
-    for account in accounts_list:
+    for account in accounts:
         cash_payload = {
             "type": "cash",
             "accountNumber": account["cashAccountNumber"],
@@ -293,7 +293,7 @@ async def get_accounts():
                 if account["cashAccountNumber"] == av_cash_account["accountNumber"]:
                     account["availableCashAmount"] = av_cash_account["amount"]
 
-    return accounts_list
+    return accounts
 
 
 @app.get("/api/price-alarms")
@@ -315,7 +315,7 @@ async def get_accounts_activity() -> list:
 
     logs = await call_tr_ws_api(payload, 4)
     if logs is None:
-        return []
+        raise HTTPException(status_code=500, detail="Failed to fetch logs")
 
     for action in logs["items"]:
         action["icon"] = (
@@ -324,51 +324,6 @@ async def get_accounts_activity() -> list:
         action["subtitle"] = fix_string(action["subtitle"])
 
     return logs["items"]
-
-
-@app.post("/api/order-fees")
-async def get_order_fees(params: Order):
-    accounts = await get_accounts_data()
-    if accounts is None:
-        return {}
-
-    securities_numbers = [
-        acc["securitiesAccountNumber"] for acc in accounts["accounts"]
-    ]
-    if params.account_nb not in securities_numbers:
-        return {}
-
-    payload = {
-        "type": "orderFeesV2",
-        "parameters": {
-            "exchangeId": params.exchange,
-            "instrumentId": params.instrument,
-            "mode": params.mode,
-            "size": params.quantity,
-            "type": params.type,
-            "currency": next(
-                (
-                    acc["currency"]
-                    for acc in accounts["accounts"]
-                    if acc["securitiesAccountNumber"] == params.account_nb
-                ),
-                None,
-            ),
-        },
-        "secAccNo": params.account_nb,
-        "__headers": {"traceparent": generate_traceparent()},
-    }
-
-    if params.mode == "stopMarket":
-        if params.stop is None:
-            return {}
-        payload["parameters"]["stop"] = params.stop
-    elif params.mode == "limit":
-        if params.limit is None:
-            return {}
-        payload["parameters"]["limit"] = params.limit
-
-    return await call_tr_ws_api(payload, 110)
 
 
 @app.post("/api/schedule-exchange")
@@ -382,11 +337,8 @@ def get_exchange_symbol(params: ExchangeSymbol):
 async def get_accounts_history(params: AccountHistoryRequest):
     accounts = await get_accounts_data()
 
-    if accounts is None:
-        return "{}"
-
     result = {}
-    for account in accounts["accounts"]:
+    for account in accounts:
         account_history = call_tr_rest_api(
             f"api-gateway/portfolio-chart/v2/chart?secAccNo={account['securitiesAccountNumber']}&range={params.range}&currency={account['currency']}"
         )
@@ -455,6 +407,41 @@ async def get_order_price(params: OrderPrice):
     return {"sell": sell_prices, "buy": buy_prices}
 
 
+@app.post("/api/order-fees")
+async def get_order_fees(params: Order):
+    accounts = await get_accounts_data()
+    securities_numbers = [
+        acc["securitiesAccountNumber"] for acc in accounts
+    ]
+    if params.account_nb not in securities_numbers:
+        raise HTTPException(status_code=400, detail="The account number you provided does not match any of your accounts")
+
+    payload = {
+        "type": "orderFeesV2",
+        "parameters": {
+            "exchangeId": params.exchange,
+            "instrumentId": params.instrument,
+            "mode": params.mode,
+            "size": params.quantity,
+            "type": params.type,
+            "currency": next(
+                (
+                    acc["currency"]
+                    for acc in accounts
+                    if acc["securitiesAccountNumber"] == params.account_nb
+                ),
+                None,
+            ),
+        },
+        "secAccNo": params.account_nb,
+        "__headers": {"traceparent": generate_traceparent()},
+    }
+
+    payload = complete_order_details(params, payload)
+
+    return await call_tr_ws_api(payload, 110)
+
+
 @app.post("/api/place-order")
 async def place_order(params: Order):
     if params.validity is None:
@@ -463,25 +450,23 @@ async def place_order(params: Order):
         )
 
     accounts = await get_accounts_data()
-    if accounts is None:
-        return {}
 
     securities_numbers = [
-        acc["securitiesAccountNumber"] for acc in accounts["accounts"]
+        acc["securitiesAccountNumber"] for acc in accounts
     ]
     if params.account_nb not in securities_numbers:
-        return {}
+        raise HTTPException(status_code=400, detail="The account number you provided does not match any of your accounts")
 
     currency = next(
         (
             acc["currency"]
-            for acc in accounts["accounts"]
+            for acc in accounts
             if acc["securitiesAccountNumber"] == params.account_nb
         ),
         None,
     )
     if currency is None:
-        return {}
+        raise HTTPException(status_code=500, detail="Failed to fetch currency for the account number you provided")
 
     payload = {
         "type": "simpleCreateOrder",
@@ -503,14 +488,7 @@ async def place_order(params: Order):
         "__headers": {"traceparent": generate_traceparent()},
     }
 
-    if params.mode == "stopMarket":
-        if params.stop is None:
-            return {}
-        payload["parameters"]["stop"] = params.stop
-    elif params.mode == "limit":
-        if params.limit is None:
-            return {}
-        payload["parameters"]["limit"] = params.limit
+    payload = complete_order_details(params, payload)
 
     return await call_tr_ws_api(payload, 142)
 
