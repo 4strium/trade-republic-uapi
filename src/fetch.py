@@ -1,6 +1,7 @@
 import base64
 import json
 import secrets
+from pathlib import Path
 
 import httpx
 import websockets
@@ -13,7 +14,7 @@ def generate_traceparent() -> str:
 
 
 def get_cookies():
-    with open("auth.json", "r") as f:
+    with open(Path("data/auth.json"), "r") as f:
         auth_data = json.load(f)
     return {cookie["name"]: cookie["value"] for cookie in auth_data.get("cookies", [])}
 

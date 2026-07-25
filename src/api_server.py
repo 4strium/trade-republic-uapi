@@ -5,7 +5,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from fetch import call_tr_rest_api, call_tr_ws_api, generate_traceparent
+from src.fetch import call_tr_rest_api, call_tr_ws_api, generate_traceparent
 
 JURISDICTION = "FR"
 APPROVED_EXCHANGES = Literal["LSX", "TDG", "TIB", "XETR", "XMIL", "XPAR", "XWBO"]
@@ -77,17 +77,24 @@ async def get_accounts_data():
 
     return accounts["accounts"]
 
+
 def complete_order_details(params, payload):
     if params.mode == "stopMarket":
         if params.stop is None:
-            raise HTTPException(status_code=400, detail="The stop price is required for stop market orders")
+            raise HTTPException(
+                status_code=400,
+                detail="The stop price is required for stop market orders",
+            )
         payload["parameters"]["stop"] = params.stop
     elif params.mode == "limit":
         if params.limit is None:
-            raise HTTPException(status_code=400, detail="The limit price is required for limit orders")
+            raise HTTPException(
+                status_code=400, detail="The limit price is required for limit orders"
+            )
         payload["parameters"]["limit"] = params.limit
-    
+
     return payload
+
 
 def fix_string(text: str) -> str:
     try:
@@ -107,6 +114,7 @@ def fix_struct(data):
         return fix_string(data)
     else:
         return data
+
 
 @app.get("/api/personal-details")
 def get_personal_details():
@@ -180,13 +188,15 @@ async def get_interests():
                 )
                 interests["title"] = fix_string(interests["title"])
                 return interests
-            raise HTTPException(status_code=500, detail="Failed to fetch interests details")
+            raise HTTPException(
+                status_code=500, detail="Failed to fetch interests details"
+            )
 
 
 @app.get("/api/orders")
 async def get_orders():
     accounts = await get_accounts_data()
-    
+
     result = {}
     for account in accounts:
         if account["productType"] != "DEFAULT":
@@ -410,11 +420,12 @@ async def get_order_price(params: OrderPrice):
 @app.post("/api/order-fees")
 async def get_order_fees(params: Order):
     accounts = await get_accounts_data()
-    securities_numbers = [
-        acc["securitiesAccountNumber"] for acc in accounts
-    ]
+    securities_numbers = [acc["securitiesAccountNumber"] for acc in accounts]
     if params.account_nb not in securities_numbers:
-        raise HTTPException(status_code=400, detail="The account number you provided does not match any of your accounts")
+        raise HTTPException(
+            status_code=400,
+            detail="The account number you provided does not match any of your accounts",
+        )
 
     payload = {
         "type": "orderFeesV2",
@@ -451,11 +462,12 @@ async def place_order(params: Order):
 
     accounts = await get_accounts_data()
 
-    securities_numbers = [
-        acc["securitiesAccountNumber"] for acc in accounts
-    ]
+    securities_numbers = [acc["securitiesAccountNumber"] for acc in accounts]
     if params.account_nb not in securities_numbers:
-        raise HTTPException(status_code=400, detail="The account number you provided does not match any of your accounts")
+        raise HTTPException(
+            status_code=400,
+            detail="The account number you provided does not match any of your accounts",
+        )
 
     currency = next(
         (
@@ -466,7 +478,10 @@ async def place_order(params: Order):
         None,
     )
     if currency is None:
-        raise HTTPException(status_code=500, detail="Failed to fetch currency for the account number you provided")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to fetch currency for the account number you provided",
+        )
 
     payload = {
         "type": "simpleCreateOrder",
@@ -527,5 +542,5 @@ async def delete_price_alarm(params: PriceAlarmId):
     return await call_tr_ws_api(payload, 144)
 
 
-def start_api_server():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+def start_api_server(port):
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")

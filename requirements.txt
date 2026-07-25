@@ -1,0 +1,10 @@
+fastapi==0.140.0
+httpx==0.28.1
+playwright==1.61.0
+prompt_toolkit==3.0.52
+pydantic==2.13.4
+qrcode==8.2
+questionary==2.1.1
+rich==15.0.0
+uvicorn==0.51.0
+websockets==16.1.1
