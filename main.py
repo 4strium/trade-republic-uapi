@@ -117,6 +117,9 @@ def main():
         "[italic white]Trade Republic UAPI is [bold]NOT[/bold] affiliated with Trade Republic Bank GmbH.\n[/italic white]"
     )
 
+    data_folder = Path("data")
+    data_folder.mkdir(parents=True, exist_ok=True)
+
     time.sleep(2)
 
     if not check_preferences():
@@ -216,7 +219,7 @@ def main():
                             "[bold #7aa2f7]🚀 API Gateway server is running in background![/bold #7aa2f7]\n\n"
                             f"• [bold white]Local URL:[/bold white]    [link=http://127.0.0.1:{port}]http://127.0.0.1:{port}[/link]\n"
                             f"• [bold white]Network URL:[/bold white] [link=http://{local_ip}:{port}]http://{local_ip}:{port}[/link]\n\n"
-                            '[white][bold red][code]pkill -f "main.py --background"[/code][/bold red] to stop the server.[/white]',
+                            '[white][bold red][code]pkill -f "traderep-uapi --background"[/code][/bold red] to stop the server.[/white]',
                             border_style="#7aa2f7",
                             padding=(1, 2),
                         )
@@ -282,10 +285,10 @@ if __name__ == "__main__":
     parser.add_argument(
         "--background",
         action="store_true",
-        help="Option interne pour le mode arrière-plan",
+        help="Internal option for background mode",
     )
     parser.add_argument(
-        "--port", type=int, default=8000, help="Port d'écoute pour l'API"
+        "--port", type=int, default=8000, help="Listening port for the API"
     )
     args = parser.parse_args()
     if "--background" in sys.argv:
