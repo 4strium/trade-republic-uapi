@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import signal
 import subprocess
 import sys
 import threading
@@ -15,9 +16,13 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 
-from src.api_server import start_api_server
-from src.auth import check_authentification, get_local_ip
-from src.preferences import ask_preferences, check_preferences, load_preferences
+from trade_republic_uapi.api_server import start_api_server
+from trade_republic_uapi.auth import check_authentification, get_local_ip
+from trade_republic_uapi.preferences import (
+    ask_preferences,
+    check_preferences,
+    load_preferences,
+)
 
 APP_LOGO = """
 ████████ ██████   █████  ██████  ███████     ██████  ███████ ██████  ██    ██ ██████  ██      ██  ██████     ██    ██  █████  ██████  ██
@@ -30,6 +35,39 @@ APP_LOGO = """
 console = Console()
 auth_path = Path("data/auth.json")
 server_log_path = Path("data/server.log")
+server_pid_path = Path("data/server.pid")
+
+
+def ensure_chromium_installed() -> None:
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            browser.close()
+    except PlaywrightError as e:
+        msg = str(e).lower()
+        if "executable doesn't exist" not in msg and "browser" not in msg:
+            raise
+
+        console.print(
+            "[bold yellow]⚠️ Chromium is missing. Installing Playwright Chromium now...[/bold yellow]"
+        )
+        result = subprocess.run(
+            [sys.executable, "-m", "playwright", "install", "chromium"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            console.print(
+                Panel(
+                    "[bold white]Failed to install Chromium automatically.[/bold white]\n"
+                    "[dim]Please run: python -m playwright install chromium[/dim]",
+                    title="[bold white on red] ERROR [/bold white on red]",
+                    border_style="red",
+                    expand=False,
+                )
+            )
+            sys.exit(1)
 
 
 def extract_qr_data(container, page):
@@ -92,6 +130,38 @@ def keep_alive(page, context):
             break
 
 
+def get_launch_command() -> str:
+    """Reconstruit la commande utilisée pour lancer ce CLI, afin que les
+    messages affichés (ex: commande d'arrêt) correspondent réellement à la
+    façon dont l'utilisateur a lancé le programme.
+    """
+    if Path(sys.argv[0]).name == "cli.py":
+        return f"{sys.executable} -m trade_republic_uapi.cli"
+    return "traderep-uapi"
+
+
+def stop_background_server():
+    if not server_pid_path.exists():
+        console.print(
+            "[bold yellow]⚠️ No running background server found (no PID file).[/bold yellow]"
+        )
+        return
+
+    pid = int(server_pid_path.read_text().strip())
+
+    try:
+        # start_new_session=True met le process dans son propre groupe :
+        # on tue tout le groupe (process principal + thread API/Playwright).
+        os.killpg(pid, signal.SIGTERM)
+        console.print(f"[bold #7aa2f7]🛑 Server (PID {pid}) stopped.[/bold #7aa2f7]")
+    except ProcessLookupError:
+        console.print(
+            "[bold yellow]⚠️  Server was not running (stale PID file removed).[/bold yellow]"
+        )
+    finally:
+        server_pid_path.unlink(missing_ok=True)
+
+
 def run_background_server(port: int):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -112,6 +182,7 @@ def run_background_server(port: int):
 
 
 def main():
+    ensure_chromium_installed()
     console.print(f"[bold #7aa2f7]{APP_LOGO}[/bold #7aa2f7]")
     console.print(
         "[italic white]Trade Republic UAPI is [bold]NOT[/bold] affiliated with Trade Republic Bank GmbH.\n[/italic white]"
@@ -219,7 +290,7 @@ def main():
                             "[bold #7aa2f7]🚀 API Gateway server is running in background![/bold #7aa2f7]\n\n"
                             f"• [bold white]Local URL:[/bold white]    [link=http://127.0.0.1:{port}]http://127.0.0.1:{port}[/link]\n"
                             f"• [bold white]Network URL:[/bold white] [link=http://{local_ip}:{port}]http://{local_ip}:{port}[/link]\n\n"
-                            '[white][bold red][code]pkill -f "traderep-uapi --background"[/code][/bold red] to stop the server.[/white]',
+                            f"[white][bold red][code]{get_launch_command()} --stop[/code][/bold red] to stop the server.[/white]",
                             border_style="#7aa2f7",
                             padding=(1, 2),
                         )
@@ -234,10 +305,11 @@ def main():
                     )
 
                     with open(server_log_path, "a") as logfile:
-                        subprocess.Popen(
+                        process = subprocess.Popen(
                             [
                                 sys.executable,
-                                os.path.abspath(__file__),
+                                "-m",
+                                "trade_republic_uapi.cli",
                                 "--background",
                                 "--port",
                                 str(port),
@@ -247,6 +319,7 @@ def main():
                             stdin=subprocess.DEVNULL,
                             start_new_session=True,
                         )
+                        server_pid_path.write_text(str(process.pid))
 
                     sys.exit(0)
 
@@ -280,7 +353,8 @@ def main():
         context.close()
 
 
-if __name__ == "__main__":
+def run():
+    ensure_chromium_installed()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--background",
@@ -290,8 +364,19 @@ if __name__ == "__main__":
     parser.add_argument(
         "--port", type=int, default=8000, help="Listening port for the API"
     )
+    parser.add_argument(
+        "--stop",
+        action="store_true",
+        help="Stop the background server started previously",
+    )
     args = parser.parse_args()
-    if "--background" in sys.argv:
+    if args.stop:
+        stop_background_server()
+    elif "--background" in sys.argv:
         run_background_server(args.port)
     else:
         main()
+
+
+if __name__ == "__main__":
+    run()

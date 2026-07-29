@@ -6,8 +6,6 @@ import questionary
 from prompt_toolkit.shortcuts import yes_no_dialog
 from prompt_toolkit.styles import Style
 
-from src.auth import test_firewall_status
-
 
 def save_preferences(user_agreement: bool, jurisdiction: str, api_port: int):
     path = Path("data/preferences.json")
@@ -41,7 +39,6 @@ def check_preferences() -> bool:
             data.get("user_agreement") is True
             and data.get("jurisdiction") is not None
             and port is not None
-            and test_firewall_status(port)
         ):
             return True
     return False
@@ -114,17 +111,11 @@ def ask_preferences(console):
     ).ask()
 
     api_port_str = questionary.text(
-        "On which port of your server do you want to make the API available?",
+        "On which port of your server do you want to make the API available? (make sure the port is available and not blocked by the firewall)",
         validate=lambda val: val.isdigit() or "Please enter a valid integer.",
         default="8000",
     ).ask()
 
     api_port = int(api_port_str)
-
-    if not test_firewall_status(api_port):
-        console.print(
-            f"[bold red]❌ Port {api_port} is blocked by the firewall. Please make sure the port is available and try again.[/bold red]"
-        )
-        sys.exit()
 
     save_preferences(user_agreement, jurisdiction.split("(")[1].strip(")"), api_port)

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "trade-republic-uapi"
+version = "1.0.0"
+description = "Lightweight & Fast unofficial REST API for Trade Republic"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "4strium" }]
+keywords = ["trade-republic", "api", "unofficial", "fastapi", "fintech"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "fastapi==0.140.0",
+    "httpx==0.28.1",
+    "playwright==1.61.0",
+    "prompt_toolkit==3.0.52",
+    "pydantic==2.13.4",
+    "qrcode==8.2",
+    "questionary==2.1.1",
+    "rich==15.0.0",
+    "uvicorn==0.51.0",
+    "websockets==16.1.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/4strium/trade-republic-uapi"
+Repository = "https://github.com/4strium/trade-republic-uapi"
+
+[project.scripts]
+traderep-uapi = "trade_republic_uapi.cli:run"
+
+[tool.setuptools.packages.find]
+include = ["trade_republic_uapi*"]

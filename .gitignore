@@ -2,3 +2,5 @@ __pycache__
 data/
 .ruff_cache
 dist/
+build/
+*.egg-info/
