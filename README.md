@@ -1,7 +1,12 @@
 # Trade Republic Unofficial API
-Lightweight & Fast unofficial REST API for Trade Republic
 
 > ⚠️ **Disclaimer**: this project is **not affiliated with Trade Republic Bank GmbH**. Use it at your own risk, especially for endpoints that place real orders.
+
+<p align="center">
+  <img src="https://github.com/4strium/trade-republic-uapi/blob/main/ressources/TradeRepublicUAPI_demo.gif?raw=true"  width="80%" alt="CLI demonstration">
+</p>
+
+Lightweight & Fast unofficial REST API for Trade Republic
 
 ## How it works
 
@@ -26,10 +31,6 @@ Lightweight & Fast unofficial REST API for Trade Republic
 ```
 
 Follow the on-screen instructions to scan the QR code with the Trade Republic app. Once authenticated, the API server starts automatically.
-
-- Default port: **8000** (override with `traderep-uapi --port <PORT>`, or `python3 -m trade_republic_uapi.cli --port <PORT>` from source)
-- Local URL: `http://127.0.0.1:8000`
-- Network URL: `http://<your-local-ip>:8000`
 
 ## Interactive API documentation
 
@@ -86,15 +87,15 @@ All endpoints are served from the base URL of your running instance (e.g. `http:
 
 #### AccountHistoryRequest
 ```jsonc
-{ "range": "1y" }
+{ "range": "1y" }  // range: 1d, 5d, 1m, 1y, max
 ```
 
 #### OrderPrice
 ```jsonc
-{ "exchange": "XETR", "instrument": "US0378331005", "unit": "EUR" }  // unit: EUR, USD
+{ "exchange": "XETR", "instrument": "US0378331005" }
 ```
 
-#### Order (used by /api/order-fees and /api/place-order)
+#### Order
 ```jsonc
 {
   "account_nb": "DE1234567890123456",

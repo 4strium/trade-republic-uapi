@@ -10,10 +10,9 @@ from trade_republic_uapi.fetch import (
     call_tr_ws_api,
     generate_traceparent,
 )
+from trade_republic_uapi.preferences import load_preferences
 
-JURISDICTION = "FR"
 APPROVED_EXCHANGES = Literal["LSX", "TDG", "TIB", "XETR", "XMIL", "XPAR", "XWBO"]
-APPROVED_UNITS = Literal["EUR", "USD"]
 APPROVED_MODES = Literal["stopMarket", "market", "limit"]
 APPROVED_RANGES = Literal["1d", "5d", "1m", "1y", "max"]
 APPROVED_VALIDITY = Literal["GFD", "GTD", "GTC"]
@@ -155,11 +154,6 @@ class OrderPrice(BaseModel):
         ...,
         description="ISIN of the instrument to price.",
         examples=["US0378331005"],
-    )
-    unit: APPROVED_UNITS = Field(
-        ...,
-        description="Currency the price should be expressed in.",
-        examples=["EUR"],
     )
 
 
@@ -462,7 +456,7 @@ async def get_portfolio():
                     stock_details_payload = {
                         "type": "stockDetails",
                         "id": position["isin"],
-                        "jurisdiction": JURISDICTION,
+                        "jurisdiction": load_preferences().get("jurisdiction"),
                         "__headers": {"traceparent": generate_traceparent()},
                     }
                     stock_details = await call_tr_ws_api(stock_details_payload, 28)
@@ -657,7 +651,7 @@ async def get_global_instrument(params: Instrument):
     payload = {
         "type": "instrument",
         "id": params.id,
-        "jurisdiction": JURISDICTION,
+        "jurisdiction": load_preferences().get("jurisdiction"),
         "__headers": {"traceparent": generate_traceparent()},
     }
 
@@ -689,9 +683,8 @@ async def get_tr_instrument(params: Instrument):
     tags=["Orders"],
     summary="Get live buy/sell price of an instrument",
     description=(
-        "Returns the current live `sell` and `buy` prices for an "
-        "instrument on a given exchange, expressed in the requested "
-        "currency unit."
+        "Returns the current live `sell` and `buy` prices in EURO for an "
+        "instrument on a given exchange."
     ),
     response_description="Object with `sell` and `buy` price quotes.",
 )
@@ -700,7 +693,7 @@ async def get_order_price(params: OrderPrice):
         "type": "priceForOrderV2",
         "isin": params.instrument,
         "exchangeId": params.exchange,
-        "unit": params.unit,
+        "unit": "EUR",
         "__headers": {"traceparent": generate_traceparent()},
     }
 
