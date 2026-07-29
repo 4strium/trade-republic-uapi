@@ -3,7 +3,7 @@
 > ⚠️ **Disclaimer**: this project is **not affiliated with Trade Republic Bank GmbH**. Use it at your own risk, especially for endpoints that place real orders.
 
 <p align="center">
-  <img src="https://github.com/4strium/trade-republic-uapi/blob/main/ressources/TradeRepublicUAPI_demo.gif?raw=true"  width="80%" alt="CLI demonstration">
+  <img src="https://github.com/4strium/trade-republic-uapi/blob/main/ressources/TradeRepublicUAPI_demo.gif?raw=true" width="80%" alt="">
 </p>
 
 Lightweight & Fast unofficial REST API for Trade Republic
