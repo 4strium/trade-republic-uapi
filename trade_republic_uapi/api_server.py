@@ -1,8 +1,11 @@
+import os
+import secrets
 import uuid
 from typing import Literal
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
 
 from trade_republic_uapi.__init__ import __version__
@@ -18,6 +21,27 @@ APPROVED_MODES = Literal["stopMarket", "market", "limit"]
 APPROVED_RANGES = Literal["1d", "5d", "1m", "1y", "max"]
 APPROVED_VALIDITY = Literal["GFD", "GTD", "GTC"]
 
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
+
+
+def verify_api_key(api_key: str = Depends(api_key_header)) -> str:
+    expected_key = os.getenv("TR_UAPI_KEY")
+
+    if not expected_key or not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key is missing or invalid",
+        )
+
+    if not secrets.compare_digest(api_key, expected_key):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key is missing or invalid",
+        )
+
+    return api_key
+
+
 app = FastAPI(
     title="Trade Republic Unofficial API",
     description=(
@@ -32,6 +56,7 @@ app = FastAPI(
     ),
     version=__version__,
     contact={"name": "trade-republic-uapi"},
+    dependencies=[Depends(verify_api_key)],
 )
 
 

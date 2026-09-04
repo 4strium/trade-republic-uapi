@@ -1,6 +1,7 @@
 import argparse
 import os
 import re
+import secrets
 import signal
 import subprocess
 import sys
@@ -287,6 +288,14 @@ def main():
                         f"[bold {CLI_COLOR_STYLE}]\n🎉 Authentification successful 🎉[/bold {CLI_COLOR_STYLE}]"
                     )
 
+                    api_key = secrets.token_urlsafe(32)
+                    console.print(
+                        f"[bold {CLI_COLOR_STYLE}]\n🔑 API key:[/bold {CLI_COLOR_STYLE}] [code]{api_key}[/code] [italic](make sure to save it, it will not be shown again)[/italic]"
+                    )
+
+                    srv_env = os.environ.copy()
+                    srv_env["TR_UAPI_KEY"] = str(api_key)
+
                     port = load_preferences().get("api_port")
 
                     local_ip = get_local_ip()
@@ -299,14 +308,6 @@ def main():
                             border_style=CLI_COLOR_STYLE,
                             padding=(1, 2),
                         )
-                    )
-
-                    time.sleep(2)
-                    console.print(
-                        f'[bold {CLI_COLOR_STYLE}]\n😉 Typing [code]curl -s -X GET "http://127.0.0.1:{port}/api/personal-details"[/code] is a good way to test the API.[/bold {CLI_COLOR_STYLE}]'
-                    )
-                    console.print(
-                        f"[bold {CLI_COLOR_STYLE}]\n📚 All endpoints are documented at [link=http://{local_ip}:{port}/docs]http://{local_ip}:{port}/docs[/link].\n[/bold {CLI_COLOR_STYLE}]"
                     )
 
                     with open(server_log_path, "a") as logfile:
@@ -323,8 +324,17 @@ def main():
                             stderr=logfile,
                             stdin=subprocess.DEVNULL,
                             start_new_session=True,
+                            env=srv_env,
                         )
                         server_pid_path.write_text(str(process.pid))
+
+                    time.sleep(2)
+                    console.print(
+                        f'[bold {CLI_COLOR_STYLE}]\n😉 Typing [code]curl -s -X GET "http://127.0.0.1:{port}/api/personal-details" -H "X-API-Key: <api_key>"[/code] is a good way to test the API.[/bold {CLI_COLOR_STYLE}]'
+                    )
+                    console.print(
+                        f"[bold {CLI_COLOR_STYLE}]\n📚 All endpoints are documented at [link=http://{local_ip}:{port}/docs]http://{local_ip}:{port}/docs[/link].\n[/bold {CLI_COLOR_STYLE}]"
+                    )
 
                     sys.exit(0)
 

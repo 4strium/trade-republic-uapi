@@ -28,8 +28,9 @@ def check_authentification(context, page):
     time_left = exp - now
 
     if time_left < 100:
+        print(f"Reloading page ({page.url})...", flush=True)
         page.reload()
-        time.sleep(2)
+        time.sleep(4)
         context.storage_state(path=auth_path)
 
     return max(0, time_left) != 0
