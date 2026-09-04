@@ -6,6 +6,8 @@ import questionary
 from prompt_toolkit.shortcuts import yes_no_dialog
 from prompt_toolkit.styles import Style
 
+CLI_COLOR_STYLE = "#7aa2f7"
+
 
 def save_preferences(user_agreement: bool, jurisdiction: str, api_port: int):
     path = Path("data/preferences.json")
@@ -48,7 +50,7 @@ def ask_preferences(console):
     user_agreement_style = Style.from_dict(
         {
             # Fond et texte du dialogue
-            "dialog": "bg:#7aa2f7",
+            "dialog": f"bg:{CLI_COLOR_STYLE}",
             "dialog frame.label": "fg:#1a1a2e bold",
             "dialog.body": "fg:#1a1a2e",
             # 1. BOUTONS INACTIFS
@@ -58,7 +60,7 @@ def ask_preferences(console):
             # 2. BOUTON SÉLECTIONNÉ (Ciblage des éléments texte/flèches internes)
             "button.focused": "bg:#0f3460",
             "button.focused button.text": "fg:#ffffff bold",
-            "button.focused button.arrow": "fg:#7aa2f7 bold",
+            "button.focused button.arrow": f"fg:{CLI_COLOR_STYLE} bold",
         }
     )
 
@@ -78,7 +80,7 @@ def ask_preferences(console):
         sys.exit()
 
     console.print(
-        "[bold #7aa2f7]☑️  The user has been made aware of the potential risks.\n[/bold #7aa2f7]"
+        f"[bold {CLI_COLOR_STYLE}]☑️  The user has been made aware of the potential risks.\n[/bold {CLI_COLOR_STYLE}]"
     )
 
     jurisdiction = questionary.select(
@@ -104,8 +106,8 @@ def ask_preferences(console):
         ],
         style=questionary.Style(
             [
-                ("selected", "fg:#7aa2f7 bold"),
-                ("pointer", "fg:#7aa2f7 bold"),
+                ("selected", f"fg:{CLI_COLOR_STYLE} bold"),
+                ("pointer", f"fg:{CLI_COLOR_STYLE} bold"),
             ]
         ),
     ).ask()

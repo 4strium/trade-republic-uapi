@@ -32,6 +32,8 @@ APP_LOGO = """
    ██    ██   ██ ██   ██ ██████  ███████     ██   ██ ███████ ██       ██████  ██████  ███████ ██  ██████      ██████  ██   ██ ██      ██
 """
 
+from trade_republic_uapi.preferences import CLI_COLOR_STYLE
+
 console = Console()
 auth_path = Path("data/auth.json")
 server_log_path = Path("data/server.log")
@@ -97,7 +99,7 @@ def print_qr(data):
         qr.add_data(data)
         qr.make()
         qr.print_ascii(invert=True)
-        console.print(Rule(style="#7aa2f7"))
+        console.print(Rule(style=CLI_COLOR_STYLE))
 
 
 def keep_alive(page, context):
@@ -140,24 +142,27 @@ def get_launch_command() -> str:
     return "traderep-uapi"
 
 
-def stop_background_server():
+def stop_background_server(silent: bool = False):
     if not server_pid_path.exists():
-        console.print(
-            "[bold yellow]⚠️ No running background server found (no PID file).[/bold yellow]"
-        )
+        if not silent:
+            console.print(
+                "[bold yellow]⚠️  No running background server found (no PID file).[/bold yellow]"
+            )
         return
 
     pid = int(server_pid_path.read_text().strip())
 
     try:
-        # start_new_session=True met le process dans son propre groupe :
-        # on tue tout le groupe (process principal + thread API/Playwright).
-        os.killpg(pid, signal.SIGTERM)
-        console.print(f"[bold #7aa2f7]🛑 Server (PID {pid}) stopped.[/bold #7aa2f7]")
+        os.kill(pid, signal.SIGTERM)
+        if not silent:
+            console.print(
+                f"[bold {CLI_COLOR_STYLE}]🛑  Server (PID {pid}) stopped.[/bold {CLI_COLOR_STYLE}]"
+            )
     except ProcessLookupError:
-        console.print(
-            "[bold yellow]⚠️  Server was not running (stale PID file removed).[/bold yellow]"
-        )
+        if not silent:
+            console.print(
+                "[bold yellow]⚠️  Server was not running (stale PID file removed).[/bold yellow]"
+            )
     finally:
         server_pid_path.unlink(missing_ok=True)
 
@@ -183,7 +188,7 @@ def run_background_server(port: int):
 
 def main():
     ensure_chromium_installed()
-    console.print(f"[bold #7aa2f7]{APP_LOGO}[/bold #7aa2f7]")
+    console.print(f"[bold {CLI_COLOR_STYLE}]{APP_LOGO}[/bold {CLI_COLOR_STYLE}]")
     console.print(
         "[italic white]Trade Republic UAPI is [bold]NOT[/bold] affiliated with Trade Republic Bank GmbH.\n[/italic white]"
     )
@@ -211,8 +216,8 @@ def main():
             It will ensure the connection is maintained continuously in the background (as long as you do not shut down your server). \n
             Several login QR codes will be provided by the official Trade Republic server. [bold]As soon as a QR code is generated, it is valid for 2 minutes.[/bold][/white]
             """,
-            title="[bold black on #7aa2f7] AUTHENTIFICATION PROCESS [/bold black on #7aa2f7]",
-            border_style="#7aa2f7",
+            title=f"[bold black on {CLI_COLOR_STYLE}] AUTHENTIFICATION PROCESS [/bold black on {CLI_COLOR_STYLE}]",
+            border_style=CLI_COLOR_STYLE,
             expand=False,
         )
     )
@@ -222,11 +227,13 @@ def main():
     console.print("")
     while auth_wait > 0:
         console.print(
-            f"[bold #7aa2f7]Authentification starting in {auth_wait} seconds...[/bold #7aa2f7]"
+            f"[bold {CLI_COLOR_STYLE}]Authentification starting in {auth_wait} seconds...[/bold {CLI_COLOR_STYLE}]"
         )
         auth_wait -= 1
         time.sleep(1)
     console.print("")
+
+    stop_background_server(silent=True)
 
     with sync_playwright() as p:
         with console.status(
@@ -279,7 +286,7 @@ def main():
                 if page.url != initial_url:
                     context.storage_state(path=auth_path)
                     console.print(
-                        "[bold #7aa2f7]\n🎉 Authentification successful 🎉[/bold #7aa2f7]"
+                        f"[bold {CLI_COLOR_STYLE}]\n🎉 Authentification successful 🎉[/bold {CLI_COLOR_STYLE}]"
                     )
 
                     port = load_preferences().get("api_port")
@@ -287,21 +294,21 @@ def main():
                     local_ip = get_local_ip()
                     console.print(
                         Panel.fit(
-                            "[bold #7aa2f7]🚀 API Gateway server is running in background![/bold #7aa2f7]\n\n"
+                            f"[bold {CLI_COLOR_STYLE}]🚀 API Gateway server is running in background![/bold {CLI_COLOR_STYLE}]\n\n"
                             f"• [bold white]Local URL:[/bold white]    [link=http://127.0.0.1:{port}]http://127.0.0.1:{port}[/link]\n"
                             f"• [bold white]Network URL:[/bold white] [link=http://{local_ip}:{port}]http://{local_ip}:{port}[/link]\n\n"
                             f"[white][bold red][code]{get_launch_command()} --stop[/code][/bold red] to stop the server.[/white]",
-                            border_style="#7aa2f7",
+                            border_style=CLI_COLOR_STYLE,
                             padding=(1, 2),
                         )
                     )
 
                     time.sleep(2)
                     console.print(
-                        f'[bold #7aa2f7]\n😉 Typing [code]curl -s -X GET "http://127.0.0.1:{port}/api/personal-details"[/code] is a good way to test the API.[/bold #7aa2f7]'
+                        f'[bold {CLI_COLOR_STYLE}]\n😉 Typing [code]curl -s -X GET "http://127.0.0.1:{port}/api/personal-details"[/code] is a good way to test the API.[/bold {CLI_COLOR_STYLE}]'
                     )
                     console.print(
-                        f"[bold #7aa2f7]\n📚 All endpoints are documented at [link=http://{local_ip}:{port}/docs]http://{local_ip}:{port}/docs[/link].\n[/bold #7aa2f7]"
+                        f"[bold {CLI_COLOR_STYLE}]\n📚 All endpoints are documented at [link=http://{local_ip}:{port}/docs]http://{local_ip}:{port}/docs[/link].\n[/bold {CLI_COLOR_STYLE}]"
                     )
 
                     with open(server_log_path, "a") as logfile:
