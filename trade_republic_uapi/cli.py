@@ -18,7 +18,9 @@ from rich.rule import Rule
 
 from trade_republic_uapi.api_server import start_api_server
 from trade_republic_uapi.auth import check_authentification, get_local_ip
+from trade_republic_uapi.paths import auth_path, server_log_path, server_pid_path
 from trade_republic_uapi.preferences import (
+    CLI_COLOR_STYLE,
     ask_preferences,
     check_preferences,
     load_preferences,
@@ -32,12 +34,7 @@ APP_LOGO = """
    ██    ██   ██ ██   ██ ██████  ███████     ██   ██ ███████ ██       ██████  ██████  ███████ ██  ██████      ██████  ██   ██ ██      ██
 """
 
-from trade_republic_uapi.preferences import CLI_COLOR_STYLE
-
 console = Console()
-auth_path = Path("data/auth.json")
-server_log_path = Path("data/server.log")
-server_pid_path = Path("data/server.pid")
 
 
 def ensure_chromium_installed() -> None:
@@ -222,7 +219,7 @@ def main():
         )
     )
 
-    time.sleep(10)
+    time.sleep(4)
     auth_wait = 5
     console.print("")
     while auth_wait > 0:
@@ -284,7 +281,8 @@ def main():
                     last_label = current_label
 
                 if page.url != initial_url:
-                    context.storage_state(path=auth_path)
+                    time.sleep(4)
+                    _ = context.storage_state(path=auth_path)
                     console.print(
                         f"[bold {CLI_COLOR_STYLE}]\n🎉 Authentification successful 🎉[/bold {CLI_COLOR_STYLE}]"
                     )

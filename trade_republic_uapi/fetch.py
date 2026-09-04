@@ -1,10 +1,11 @@
 import base64
 import json
 import secrets
-from pathlib import Path
 
 import httpx
 import websockets
+
+from trade_republic_uapi.paths import auth_path
 
 
 def generate_traceparent() -> str:
@@ -14,7 +15,7 @@ def generate_traceparent() -> str:
 
 
 def get_cookies():
-    with open(Path("data/auth.json"), "r") as f:
+    with open(auth_path, "r") as f:
         auth_data = json.load(f)
     return {cookie["name"]: cookie["value"] for cookie in auth_data.get("cookies", [])}
 
@@ -42,7 +43,6 @@ def call_tr_rest_api(endpoint: str):
         response = client.get(url)
 
         if response.status_code == 200:
-            print(" Réponse API REST reçue avec succès ! ")
             return response.json()
         else:
             print(f" Échec ({response.status_code}) : {response.text}")
@@ -100,7 +100,6 @@ async def call_tr_ws_api(command: dict, id: int) -> dict | None:
             msg_id, msg_type, payload = parts[0], parts[1], parts[2]
 
             if msg_id == str(id) and msg_type in ["A", "D"]:
-                # Une fois la donnée reçue, on désabonne et on quitte la boucle
                 await ws.send(f"unsub {id}")
 
                 return json.loads(payload)

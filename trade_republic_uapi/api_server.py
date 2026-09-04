@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
+from trade_republic_uapi.__init__ import __version__
 from trade_republic_uapi.fetch import (
     call_tr_rest_api,
     call_tr_ws_api,
@@ -29,7 +30,7 @@ app = FastAPI(
         "startup). No API key is needed to call this local server, but the "
         "server itself must be logged in to Trade Republic to answer requests."
     ),
-    version="1.0.0",
+    version=__version__,
     contact={"name": "trade-republic-uapi"},
 )
 
