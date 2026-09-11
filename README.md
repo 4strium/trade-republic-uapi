@@ -44,18 +44,25 @@ Once the server is running, interactive documentation where you can browse every
 
 All endpoints are served from the base URL of your running instance (e.g. `http://127.0.0.1:8000`). `GET` endpoints take no body; `POST` endpoints take a JSON body as described.
 
+### GET endpoints
+
+| Method | Path                     | Tag          | Description                                                        |
+|--------|--------------------------|--------------|----------------------------------------------------------------------------|
+| GET    | `/api/personal-details`  | Account      | Personal details + banking info (IBAN/BIC) of the customer                 |
+| GET    | `/api/tickets`           | Account      | Open and closed support tickets                                            |
+| GET    | `/api/card`              | Card         | Debit card details (status, cardholder, security settings...)             |
+| GET    | `/api/interests`         | Account      | Interest rate applied to cash in the default account                      |
+| GET    | `/api/orders`            | Orders       | Last 500 orders per securities account                                    |
+| GET    | `/api/transactions`      | Account      | Last 500 timeline transactions (trades, dividends, payments...)           |
+| GET    | `/api/portfolio`         | Portfolio    | Current positions per account, enriched with stock details                |
+| GET    | `/api/accounts`          | Account      | Accounts with cash balances (`cashAmount`, `availableCashAmount`)          |
+| GET    | `/api/price-alarms`      | Price Alarms | List all configured price alarms                                          |
+| GET    | `/api/accounts-activity` | Account      | Timeline activity log (logins, actions...)                                |
+
+### POST endpoints
+
 | Method | Path                     | Tag          | Description                                                        | Body schema              |
 |--------|--------------------------|--------------|----------------------------------------------------------------------------|---------------------------|
-| GET    | `/api/personal-details`  | Account      | Personal details + banking info (IBAN/BIC) of the customer                 | —                         |
-| GET    | `/api/tickets`           | Account      | Open and closed support tickets                                            | —                         |
-| GET    | `/api/card`              | Card         | Debit card details (status, cardholder, security settings...)             | —                         |
-| GET    | `/api/interests`         | Account      | Interest rate applied to cash in the default account                      | —                         |
-| GET    | `/api/orders`            | Orders       | Last 500 orders per securities account                                    | —                         |
-| GET    | `/api/transactions`      | Account      | Last 500 timeline transactions (trades, dividends, payments...)           | —                         |
-| GET    | `/api/portfolio`         | Portfolio    | Current positions per account, enriched with stock details                | —                         |
-| GET    | `/api/accounts`          | Account      | Accounts with cash balances (`cashAmount`, `availableCashAmount`)          | —                         |
-| GET    | `/api/price-alarms`      | Price Alarms | List all configured price alarms                                          | —                         |
-| GET    | `/api/accounts-activity` | Account      | Timeline activity log (logins, actions...)                                | —                         |
 | POST   | `/api/schedule-exchange` | Instruments  | Trading schedule of an exchange                                           | [`ExchangeSymbol`](#exchangesymbol)          |
 | POST   | `/api/accounts-history`  | Portfolio    | Historical portfolio value per account, over a time range                 | [`AccountHistoryRequest`](#accounthistoryrequest)   |
 | POST   | `/api/instrument-history`| Instruments  | Historical price series of an instrument, over a time range               | [`InstrumentHistory`](#instrumenthistory)       |
