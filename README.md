@@ -133,68 +133,75 @@ The examples below use fictitious values (fake ISIN, account number, order IDs).
 
 ```bash
 # Personal details
-curl -s -X GET "http://127.0.0.1:8000/api/personal-details"
+curl -s -X GET "http://127.0.0.1:8000/api/personal-details" -H "X-API-Key: <api_key>"
 
 # Support tickets
-curl -s -X GET "http://127.0.0.1:8000/api/tickets"
+curl -s -X GET "http://127.0.0.1:8000/api/tickets" -H "X-API-Key: <api_key>"
 
 # Debit card details
-curl -s -X GET "http://127.0.0.1:8000/api/card"
+curl -s -X GET "http://127.0.0.1:8000/api/card" -H "X-API-Key: <api_key>"
 
 # Interest rate on cash
-curl -s -X GET "http://127.0.0.1:8000/api/interests"
+curl -s -X GET "http://127.0.0.1:8000/api/interests" -H "X-API-Key: <api_key>"
 
 # Orders per account
-curl -s -X GET "http://127.0.0.1:8000/api/orders"
+curl -s -X GET "http://127.0.0.1:8000/api/orders" -H "X-API-Key: <api_key>"
 
 # Transactions timeline
-curl -s -X GET "http://127.0.0.1:8000/api/transactions"
+curl -s -X GET "http://127.0.0.1:8000/api/transactions" -H "X-API-Key: <api_key>"
 
 # Portfolio positions
-curl -s -X GET "http://127.0.0.1:8000/api/portfolio"
+curl -s -X GET "http://127.0.0.1:8000/api/portfolio" -H "X-API-Key: <api_key>"
 
 # Accounts + cash balances
-curl -s -X GET "http://127.0.0.1:8000/api/accounts"
+curl -s -X GET "http://127.0.0.1:8000/api/accounts" -H "X-API-Key: <api_key>"
 
 # Price alarms
-curl -s -X GET "http://127.0.0.1:8000/api/price-alarms"
+curl -s -X GET "http://127.0.0.1:8000/api/price-alarms" -H "X-API-Key: <api_key>"
 
 # Account activity log
-curl -s -X GET "http://127.0.0.1:8000/api/accounts-activity"
+curl -s -X GET "http://127.0.0.1:8000/api/accounts-activity" -H "X-API-Key: <api_key>"
 
 # Exchange trading schedule
 curl -s -X POST "http://127.0.0.1:8000/api/schedule-exchange" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"symbol": "XETR"}'
 
 # Portfolio value history
 curl -s -X POST "http://127.0.0.1:8000/api/accounts-history" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"range": "1y"}'
 
 # Instrument price history
 curl -s -X POST "http://127.0.0.1:8000/api/instrument-history" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"id": "US0378331005", "range": "1m"}'
 
 # Global instrument details
 curl -s -X POST "http://127.0.0.1:8000/api/instrument" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"id": "US0378331005"}'
 
 # Trade Republic home exchange for an instrument
 curl -s -X POST "http://127.0.0.1:8000/api/tr-instrument" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"id": "US0378331005"}'
 
 # Live order price (buy/sell quote)
 curl -s -X POST "http://127.0.0.1:8000/api/order-price" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"exchange": "XETR", "instrument": "US0378331005", "unit": "EUR"}'
 
 # Get order fees
 curl -s -X POST "http://127.0.0.1:8000/api/order-fees" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{
     "account_nb": "DE1234567890123456",
     "exchange": "XETR",
@@ -208,6 +215,7 @@ curl -s -X POST "http://127.0.0.1:8000/api/order-fees" \
 # Place a real order ⚠️
 curl -s -X POST "http://127.0.0.1:8000/api/place-order" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{
     "account_nb": "DE1234567890123456",
     "exchange": "XETR",
@@ -222,173 +230,19 @@ curl -s -X POST "http://127.0.0.1:8000/api/place-order" \
 # Cancel an order
 curl -s -X POST "http://127.0.0.1:8000/api/cancel-order" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"orderId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"}'
 
 # Create a price alarm
 curl -s -X POST "http://127.0.0.1:8000/api/set-price-alarm" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"instrument": "US0378331005", "targetPrice": 180.0}'
 
 # Delete a price alarm
 curl -s -X POST "http://127.0.0.1:8000/api/delete-price-alarm" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
   -d '{"alarmId": "9f8e7d6c-5b4a-3210-fedc-ba0987654321"}'
 ```
 
-### Python
-
-Using the [`requests`](https://pypi.org/project/requests/) library (`pip install requests`):
-
-```python
-import requests
-
-BASE_URL = "http://127.0.0.1:8000"
-
-# --- Simple GET endpoints -------------------------------------------------
-portfolio = requests.get(f"{BASE_URL}/api/portfolio").json()
-accounts = requests.get(f"{BASE_URL}/api/accounts").json()
-print(portfolio, accounts)
-
-# --- Get the live price of an instrument ----------------------------------
-price = requests.post(
-    f"{BASE_URL}/api/order-price",
-    json={
-        "exchange": "XETR",
-        "instrument": "US0378331005",  # fictitious ISIN
-        "unit": "EUR",
-    },
-).json()
-print("Sell price:", price["sell"])
-print("Buy price:", price["buy"])
-
-# --- Simulate an order and check its fees before placing it ---------------
-order_payload = {
-    "account_nb": "DE1234567890123456",  # fictitious securities account number
-    "exchange": "XETR",
-    "instrument": "US0378331005",
-    "mode": "limit",
-    "quantity": 10,
-    "limit": 145.5,
-    "type": "buy",
-}
-fees_response = requests.post(f"{BASE_URL}/api/order-fees", json=order_payload)
-fees_response.raise_for_status()
-print("Estimated fees:", fees_response.json())
-
-# --- Place a real order (validity is required) ⚠️ --------------------------
-order_payload["validity"] = "GTC"
-place_response = requests.post(f"{BASE_URL}/api/place-order", json=order_payload)
-if place_response.status_code == 200:
-    print("Order placed:", place_response.json())
-else:
-    print("Error placing order:", place_response.status_code, place_response.json())
-
-# --- Create and then delete a price alarm ----------------------------------
-alarm = requests.post(
-    f"{BASE_URL}/api/set-price-alarm",
-    json={"instrument": "US0378331005", "targetPrice": 180.0},
-).json()
-print("Alarm created:", alarm)
-
-requests.post(
-    f"{BASE_URL}/api/delete-price-alarm",
-    json={"alarmId": "9f8e7d6c-5b4a-3210-fedc-ba0987654321"},
-)
-```
-
-### Rust
-
-Using [`reqwest`](https://crates.io/crates/reqwest) and [`serde_json`](https://crates.io/crates/serde_json). Add to `Cargo.toml`:
-
-```toml
-[dependencies]
-reqwest = { version = "0.12", features = ["json", "blocking"] }
-serde_json = "1"
-```
-
-```rust
-use reqwest::blocking::Client;
-use serde_json::json;
-
-const BASE_URL: &str = "http://127.0.0.1:8000";
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new();
-
-    // --- Simple GET endpoints ---------------------------------------------
-    let portfolio: serde_json::Value = client
-        .get(format!("{BASE_URL}/api/portfolio"))
-        .send()?
-        .json()?;
-    println!("Portfolio: {portfolio}");
-
-    let accounts: serde_json::Value = client
-        .get(format!("{BASE_URL}/api/accounts"))
-        .send()?
-        .json()?;
-    println!("Accounts: {accounts}");
-
-    // --- Get the live price of an instrument -------------------------------
-    let price: serde_json::Value = client
-        .post(format!("{BASE_URL}/api/order-price"))
-        .json(&json!({
-            "exchange": "XETR",
-            "instrument": "US0378331005", // fictitious ISIN
-            "unit": "EUR"
-        }))
-        .send()?
-        .json()?;
-    println!("Sell price: {}", price["sell"]);
-    println!("Buy price: {}", price["buy"]);
-
-    // --- Simulate an order and check its fees before placing it -----------
-    let mut order_payload = json!({
-        "account_nb": "DE1234567890123456", // fictitious securities account number
-        "exchange": "XETR",
-        "instrument": "US0378331005",
-        "mode": "limit",
-        "quantity": 10,
-        "limit": 145.5,
-        "type": "buy"
-    });
-
-    let fees: serde_json::Value = client
-        .post(format!("{BASE_URL}/api/order-fees"))
-        .json(&order_payload)
-        .send()?
-        .json()?;
-    println!("Estimated fees: {fees}");
-
-    // --- Place a real order (validity is required) ⚠️ -----------------------
-    order_payload["validity"] = json!("GTC");
-    let response = client
-        .post(format!("{BASE_URL}/api/place-order"))
-        .json(&order_payload)
-        .send()?;
-
-    if response.status().is_success() {
-        println!("Order placed: {:?}", response.json::<serde_json::Value>()?);
-    } else {
-        println!(
-            "Error placing order ({}): {:?}",
-            response.status(),
-            response.json::<serde_json::Value>()?
-        );
-    }
-
-    // --- Create and then delete a price alarm ------------------------------
-    let alarm: serde_json::Value = client
-        .post(format!("{BASE_URL}/api/set-price-alarm"))
-        .json(&json!({ "instrument": "US0378331005", "targetPrice": 180.0 }))
-        .send()?
-        .json()?;
-    println!("Alarm created: {alarm}");
-
-    client
-        .post(format!("{BASE_URL}/api/delete-price-alarm"))
-        .json(&json!({ "alarmId": "9f8e7d6c-5b4a-3210-fedc-ba0987654321" }))
-        .send()?;
-
-    Ok(())
-}
-```
