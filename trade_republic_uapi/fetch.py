@@ -1,6 +1,7 @@
 import base64
 import json
 import secrets
+from typing import Any
 
 import httpx
 import websockets
@@ -49,7 +50,7 @@ def call_tr_rest_api(endpoint: str):
             return None
 
 
-async def call_tr_ws_api(command: dict, id: int) -> dict | None:
+async def call_tr_ws_api(command: dict[str, Any], id: int) -> dict[str, Any] | list[Any] | None:
     uri = "wss://api.traderepublic.com/"
 
     cookies = get_cookies()
@@ -93,7 +94,7 @@ async def call_tr_ws_api(command: dict, id: int) -> dict | None:
         await ws.send(sub_command)
 
         async for message in ws:
-            parts = message.split(" ", 2)  # type: ignore[reportArgumentType]
+            parts = message.split(" ", 2) # pyright:ignore[reportArgumentType]
             if len(parts) < 3:
                 continue
 
@@ -105,7 +106,7 @@ async def call_tr_ws_api(command: dict, id: int) -> dict | None:
                 return json.loads(payload)
 
 
-def decode_cookie(cookie):
+def decode_cookie(cookie: str) -> dict[str, str | int]:
     padded = cookie + "=" * ((4 - len(cookie) % 4) % 4)
     decoded = base64.b64decode(padded).decode("utf-8")
     return json.loads(decoded)

@@ -10,9 +10,9 @@ import time
 from pathlib import Path
 
 import qrcode
+from playwright.sync_api import BrowserContext, ElementHandle, Page, sync_playwright
 from playwright.sync_api import Error as PlaywrightError
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import sync_playwright
 from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
@@ -60,7 +60,7 @@ def ensure_chromium_installed() -> None:
         if result.returncode != 0:
             console.print(
                 Panel(
-                    "[bold white]Failed to install Chromium automatically.[/bold white]\n"
+                    "[bold white]Failed to install Chromium automatically.[/bold white]\n" +
                     "[dim]Please run: python -m playwright install chromium[/dim]",
                     title="[bold white on red] ERROR [/bold white on red]",
                     border_style="red",
@@ -70,7 +70,7 @@ def ensure_chromium_installed() -> None:
             sys.exit(1)
 
 
-def extract_qr_data(container, page):
+def extract_qr_data(container: ElementHandle, page: Page):
     """Extrait l'URL/token depuis l'aria-label du QR code."""
     aria_label = container.get_attribute("aria-label") or ""
     match = re.search(r"(https?://\S+)", aria_label)
@@ -90,7 +90,7 @@ def extract_qr_data(container, page):
     return data, aria_label
 
 
-def print_qr(data):
+def print_qr(data: str):
     if data.startswith("https://traderepublic.com/web-login/challenge?"):
         console.print("\n[bold yellow]⚠️  New QR Code available\n[/bold yellow]")
         qr = qrcode.QRCode()
@@ -100,7 +100,7 @@ def print_qr(data):
         console.print(Rule(style=CLI_COLOR_STYLE))
 
 
-def keep_alive(page, context):
+def keep_alive(page: Page, context: BrowserContext):
     while True:
         try:
             if check_authentification(context, page):
@@ -108,7 +108,7 @@ def keep_alive(page, context):
             else:
                 console.print(
                     Panel(
-                        "[bold white]Authentication lost.[/bold white]\n"
+                        "[bold white]Authentication lost.[/bold white]\n" +
                         "[dim]Please try again later.[/dim]",
                         title="[bold white on red] ERROR [/bold white on red]",
                         border_style="red",
@@ -120,7 +120,7 @@ def keep_alive(page, context):
         except (ConnectionError, TimeoutError) as e:
             console.print(
                 Panel(
-                    f"Connection with Trade Republic lost. Error: {e}\n"
+                    f"Connection with Trade Republic lost. Error: {e}\n" +
                     "[dim]Please try again later.[/dim]",
                     title="[bold white on red] ERROR [/bold white on red]",
                     border_style="red",
@@ -174,7 +174,7 @@ def run_background_server(port: int):
             storage_state=auth_path,
         )
         page = context.new_page()
-        page.goto("https://app.traderepublic.com/")
+        _ = page.goto("https://app.traderepublic.com/")
 
         api_thread = threading.Thread(
             target=start_api_server, args=(port,), daemon=True
@@ -247,13 +247,16 @@ def main():
 
             page = context.new_page()
 
-            page.goto("https://app.traderepublic.com/login")
+            _ = page.goto("https://app.traderepublic.com/login")
 
             initial_url = page.url
             qr_container_selector = ".qrCode"
 
         try:
             qr_container = page.wait_for_selector(qr_container_selector, timeout=20000)
+
+            if qr_container is None:
+                raise ValueError("QR code container not found")
 
             last_label = None
             poll_interval = 1.0  # secondes entre chaque vérification
@@ -266,7 +269,7 @@ def main():
                 if not data or len(data) < 5:
                     console.print(
                         Panel(
-                            "[bold white]Automatic token extraction failed.[/bold white]\n"
+                            "[bold white]Automatic token extraction failed.[/bold white]\n" +
                             "[dim]Please try again later.[/dim]",
                             title="[bold white on red] ERROR [/bold white on red]",
                             border_style="red",
@@ -301,9 +304,9 @@ def main():
                     local_ip = get_local_ip()
                     console.print(
                         Panel.fit(
-                            f"[bold {CLI_COLOR_STYLE}]🚀 API Gateway server is running in background![/bold {CLI_COLOR_STYLE}]\n\n"
-                            f"• [bold white]Local URL:[/bold white]    [link=http://127.0.0.1:{port}]http://127.0.0.1:{port}[/link]\n"
-                            f"• [bold white]Network URL:[/bold white] [link=http://{local_ip}:{port}]http://{local_ip}:{port}[/link]\n\n"
+                            f"[bold {CLI_COLOR_STYLE}]🚀 API Gateway server is running in background![/bold {CLI_COLOR_STYLE}]\n\n" +
+                            f"• [bold white]Local URL:[/bold white]    [link=http://127.0.0.1:{port}]http://127.0.0.1:{port}[/link]\n" +
+                            f"• [bold white]Network URL:[/bold white] [link=http://{local_ip}:{port}]http://{local_ip}:{port}[/link]\n\n" +
                             f"[white][bold red][code]{get_launch_command()} --stop[/code][/bold red] to stop the server.[/white]",
                             border_style=CLI_COLOR_STYLE,
                             padding=(1, 2),
@@ -326,7 +329,7 @@ def main():
                             start_new_session=True,
                             env=srv_env,
                         )
-                        server_pid_path.write_text(str(process.pid))
+                        _ = server_pid_path.write_text(str(process.pid))
 
                     time.sleep(2)
                     console.print(
@@ -343,7 +346,7 @@ def main():
         except PlaywrightTimeoutError:
             console.print(
                 Panel(
-                    "[bold white]Time limit exceeded: the QR code did not appear in time.[/bold white]\n"
+                    "[bold white]Time limit exceeded: the QR code did not appear in time.[/bold white]\n" +
                     "[dim]Please try again later.[/dim]",
                     title="[bold white on red] ERROR [/bold white on red]",
                     border_style="red",
@@ -355,7 +358,7 @@ def main():
         except (PlaywrightError, ValueError, TypeError) as e:
             console.print(
                 Panel(
-                    f"[bold white]Error during capture or decoding: {e}[/bold white]\n"
+                    f"[bold white]Error during capture or decoding: {e}[/bold white]\n" +
                     "[dim]Please try again later.[/dim]",
                     title="[bold white on red] ERROR [/bold white on red]",
                     border_style="red",
@@ -371,15 +374,15 @@ def main():
 def run():
     ensure_chromium_installed()
     parser = argparse.ArgumentParser()
-    parser.add_argument(
+    _ = parser.add_argument(
         "--background",
         action="store_true",
         help="Internal option for background mode",
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--port", type=int, default=8000, help="Listening port for the API"
     )
-    parser.add_argument(
+    _ = parser.add_argument(
         "--stop",
         action="store_true",
         help="Stop the background server started previously",

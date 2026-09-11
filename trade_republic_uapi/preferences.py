@@ -5,6 +5,7 @@ from pathlib import Path
 import questionary
 from prompt_toolkit.shortcuts import yes_no_dialog
 from prompt_toolkit.styles import Style
+from rich.console import Console
 
 CLI_COLOR_STYLE = "#7aa2f7"
 
@@ -24,7 +25,7 @@ def save_preferences(user_agreement: bool, jurisdiction: str, api_port: int):
         )
 
 
-def load_preferences() -> dict:
+def load_preferences() -> dict[str, int | str | bool]:
     path = Path("data/preferences.json")
     if not path.exists():
         return {}
@@ -45,8 +46,10 @@ def check_preferences() -> bool:
             return True
     return False
 
+def validate_integer(val: str) -> bool | str:
+    return val.isdigit() or "Please enter a valid integer."
 
-def ask_preferences(console):
+def ask_preferences(console: Console):
     user_agreement_style = Style.from_dict(
         {
             # Fond et texte du dialogue
@@ -114,7 +117,7 @@ def ask_preferences(console):
 
     api_port_str = questionary.text(
         "On which port of your server do you want to make the API available? (make sure the port is available and not blocked by the firewall)",
-        validate=lambda val: val.isdigit() or "Please enter a valid integer.",
+        validate=validate_integer,
         default="8000",
     ).ask()
 

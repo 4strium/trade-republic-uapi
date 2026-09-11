@@ -1,7 +1,7 @@
 import os
 import secrets
 import uuid
-from typing import Literal
+from typing import Any, Literal, cast
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -75,7 +75,7 @@ class InstrumentHistory(BaseModel):
 
     id: str = Field(
         ...,
-        description="ISIN of the instrument (International Securities "
+        description="ISIN of the instrument (International Securities " +
         "Identification Number).",
         examples=["US0378331005"],
     )
@@ -91,7 +91,7 @@ class Instrument(BaseModel):
 
     id: str = Field(
         ...,
-        description="ISIN of the instrument (International Securities "
+        description="ISIN of the instrument (International Securities " +
         "Identification Number).",
         examples=["US0378331005"],
     )
@@ -113,7 +113,7 @@ class Order(BaseModel):
 
     account_nb: str = Field(
         ...,
-        description="Securities account number the order should be placed "
+        description="Securities account number the order should be placed " +
         "on (see `securitiesAccountNumber` returned by `GET /api/accounts`).",
         examples=["DE1234567890123456"],
     )
@@ -129,9 +129,9 @@ class Order(BaseModel):
     )
     mode: APPROVED_MODES = Field(
         ...,
-        description="Order execution mode: `market` (executed immediately at "
-        "market price), `limit` (executed only at or better than `limit`), "
-        "or `stopMarket` (becomes a market order once the `stop` price is "
+        description="Order execution mode: `market` (executed immediately at " +
+        "market price), `limit` (executed only at or better than `limit`), " +
+        "or `stopMarket` (becomes a market order once the `stop` price is " +
         "reached).",
         examples=["limit"],
     )
@@ -143,7 +143,7 @@ class Order(BaseModel):
     )
     stop: float | None = Field(
         None,
-        description="Stop price. Required when `mode` is `stopMarket`, "
+        description="Stop price. Required when `mode` is `stopMarket`, " +
         "ignored otherwise.",
         examples=[150.0],
     )
@@ -159,9 +159,9 @@ class Order(BaseModel):
     )
     validity: APPROVED_VALIDITY | None = Field(
         None,
-        description="Order validity/time-in-force. Required to actually "
-        "place an order (`/api/place-order`), optional when only estimating "
-        "fees (`/api/order-fees`). `GFD` = Good For Day, `GTD` = Good Till "
+        description="Order validity/time-in-force. Required to actually " +
+        "place an order (`/api/place-order`), optional when only estimating " +
+        "fees (`/api/order-fees`). `GFD` = Good For Day, `GTD` = Good Till " +
         "Date, `GTC` = Good Till Cancelled.",
         examples=["GTC"],
     )
@@ -188,7 +188,7 @@ class OrderId(BaseModel):
 
     orderId: str = Field(
         ...,
-        description="Identifier of the order, as returned by "
+        description="Identifier of the order, as returned by " +
         "`POST /api/place-order` or `GET /api/orders`.",
         examples=["a1b2c3d4-e5f6-7890-abcd-ef1234567890"],
     )
@@ -214,26 +214,26 @@ class PriceAlarmId(BaseModel):
 
     alarmId: str = Field(
         ...,
-        description="Identifier of the price alarm, as returned by "
+        description="Identifier of the price alarm, as returned by " +
         "`GET /api/price-alarms` or `POST /api/set-price-alarm`.",
         examples=["9f8e7d6c-5b4a-3210-fedc-ba0987654321"],
     )
 
 
-async def get_accounts_data():
+async def get_accounts_data() -> list[dict[str, Any]]:
     payload = {
         "type": "accountPairs",
         "__headers": {"traceparent": generate_traceparent()},
     }
 
     accounts = await call_tr_ws_api(payload, 1)
-    if accounts is None:
+    if accounts is None or not isinstance(accounts, dict):
         raise HTTPException(status_code=500, detail="Failed to fetch accounts details")
 
     return accounts["accounts"]
 
 
-def complete_order_details(params, payload):
+def complete_order_details(params: Order, payload : dict[str, Any]):
     if params.mode == "stopMarket":
         if params.stop is None:
             raise HTTPException(
@@ -252,20 +252,20 @@ def complete_order_details(params, payload):
 
 
 def fix_string(text: str) -> str:
-    if text is None:
-        return text
     try:
         return text.encode("latin-1").decode("utf-8")
     except (UnicodeEncodeError, UnicodeDecodeError):
         return text
 
 
-def fix_struct(data):
+def fix_struct(data : Any) -> Any:
     if isinstance(data, dict):
+        data = cast(dict[str, Any], data)
         for k, v in data.items():
             data[k] = fix_struct(v)
         return data
     elif isinstance(data, list):
+        data = cast(list[Any], data)
         return [fix_struct(item) for item in data]
     elif isinstance(data, str):
         return fix_string(data)
@@ -308,7 +308,7 @@ def get_personal_details():
     ),
     response_description="Object with `open` and `closed` lists of tickets.",
 )
-def get_open_tickets():
+def get_open_tickets() -> dict[str, Any]:
     result = {}
 
     open = call_tr_rest_api("api/v2/timeline/inbox/open")
@@ -317,7 +317,7 @@ def get_open_tickets():
     closed = call_tr_rest_api("api/v2/timeline/inbox/closed")
     if closed is not None:
         result["closed"] = closed["items"]
-    return result
+    return cast(dict[str, Any], result)
 
 
 @app.get(
@@ -400,7 +400,7 @@ async def get_interests():
         "Object mapping each `securitiesAccountNumber` to its orders page."
     ),
 )
-async def get_orders():
+async def get_orders() -> dict[str, Any]:
     accounts = await get_accounts_data()
 
     result = {}
@@ -412,7 +412,7 @@ async def get_orders():
             if orders is not None:
                 result[account["securitiesAccountNumber"]] = orders
 
-    return result
+    return cast(dict[str, Any], result)
 
 
 @app.get(
@@ -456,7 +456,7 @@ async def get_transactions():
         "Object mapping each `securitiesAccountNumber` to its portfolio."
     ),
 )
-async def get_portfolio():
+async def get_portfolio() -> dict[str, Any]:
     accounts = await get_accounts_data()
 
     result = {}
@@ -469,7 +469,7 @@ async def get_portfolio():
 
         account_portfolio = await call_tr_ws_api(payload, 22)
 
-        if account_portfolio is not None:
+        if isinstance(account_portfolio, dict):
             for categories in account_portfolio["categories"]:
                 for position in categories["positions"]:
                     position["imageId"] = (
@@ -486,7 +486,7 @@ async def get_portfolio():
                         "__headers": {"traceparent": generate_traceparent()},
                     }
                     stock_details = await call_tr_ws_api(stock_details_payload, 28)
-                    if stock_details is not None:
+                    if isinstance(stock_details, dict):
                         position["aggregatedDividends"] = stock_details[
                             "aggregatedDividends"
                         ]
@@ -500,7 +500,7 @@ async def get_portfolio():
                         fix_struct(position)
             result[account["securitiesAccountNumber"]] = account_portfolio
 
-    return result
+    return cast(dict[str, Any], result)
 
 
 @app.get(
@@ -525,7 +525,7 @@ async def get_accounts():
         }
         cash_accounts = await call_tr_ws_api(cash_payload, 5)
 
-        if cash_accounts is not None:
+        if isinstance(cash_accounts, list):
             for cash_account in cash_accounts:
                 if account["cashAccountNumber"] == cash_account["accountNumber"]:
                     account["cashAmount"] = cash_account["amount"]
@@ -537,7 +537,7 @@ async def get_accounts():
         }
         available_cash_accounts = await call_tr_ws_api(available_cash_payload, 6)
 
-        if available_cash_accounts is not None:
+        if isinstance(available_cash_accounts, list):
             for av_cash_account in available_cash_accounts:
                 if account["cashAccountNumber"] == av_cash_account["accountNumber"]:
                     account["availableCashAmount"] = av_cash_account["amount"]
@@ -572,7 +572,7 @@ async def get_price_alarms():
     ),
     response_description="List of activity log entries.",
 )
-async def get_accounts_activity() -> list:
+async def get_accounts_activity() -> list[Any]:
     payload = {
         "type": "timelineActivityLog",
         "__headers": {"traceparent": generate_traceparent()},
@@ -580,7 +580,7 @@ async def get_accounts_activity() -> list:
 
     logs = await call_tr_ws_api(payload, 17)
 
-    if logs is None:
+    if logs is None or not isinstance(logs, dict):
         raise HTTPException(status_code=500, detail="Failed to fetch logs")
 
     for action in logs["items"]:
@@ -623,7 +623,7 @@ def get_exchange_symbol(params: ExchangeSymbol):
         "Object mapping each `securitiesAccountNumber` to its value history."
     ),
 )
-async def get_accounts_history(params: AccountHistoryRequest):
+async def get_accounts_history(params: AccountHistoryRequest) -> dict[str, Any]:
     accounts = await get_accounts_data()
 
     result = {}
@@ -639,7 +639,7 @@ async def get_accounts_history(params: AccountHistoryRequest):
 
             result[account["securitiesAccountNumber"]] = account_history
 
-    return result
+    return cast(dict[str, Any], result)
 
 
 @app.post(
@@ -920,5 +920,5 @@ async def delete_price_alarm(params: PriceAlarmId):
     return await call_tr_ws_api(payload, 144)
 
 
-def start_api_server(port):
+def start_api_server(port: int):
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")

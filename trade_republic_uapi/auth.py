@@ -1,5 +1,8 @@
 import socket
 import time
+from typing import cast
+
+from playwright.sync_api import BrowserContext, Page
 
 from trade_republic_uapi.fetch import decode_cookie, get_cookies
 from trade_republic_uapi.paths import auth_path
@@ -15,7 +18,7 @@ def get_local_ip():
     return local_ip
 
 
-def check_authentification(context, page):
+def check_authentification(context: BrowserContext, page: Page):
     cookies = get_cookies()
     tr_claims = cookies.get("tr_claims", "")
     if not tr_claims:
@@ -23,14 +26,14 @@ def check_authentification(context, page):
 
     tr_secret = decode_cookie(tr_claims)
     now = int(time.time())
-    exp = tr_secret.get("exp", 0)
+    exp = cast(int, tr_secret.get("exp", 0))
 
     time_left = exp - now
 
     if time_left < 100:
         print(f"Reloading page ({page.url})...", flush=True)
-        page.reload()
+        _ = page.reload()
         time.sleep(4)
-        context.storage_state(path=auth_path)
+        _ = context.storage_state(path=auth_path)
 
     return max(0, time_left) != 0
