@@ -53,8 +53,6 @@ def check_authentification(context: BrowserContext):
 
     time_left = exp - now
 
-    print(f"Time left: {time_left}s ", flush=True)
-
     if time_left < 100:
         _ = context.storage_state(path=auth_path)
 

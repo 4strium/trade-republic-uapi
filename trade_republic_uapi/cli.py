@@ -141,7 +141,7 @@ def get_launch_command() -> str:
     """
     if Path(sys.argv[0]).name == "cli.py":
         return f"{sys.executable} -m trade_republic_uapi.cli"
-    return "traderep-uapi"
+    return "trade-republic-uapi"
 
 
 def stop_background_server(silent: bool = False):

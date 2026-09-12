@@ -1,6 +1,6 @@
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = version("credit-agricole-uapi")
+    __version__ = version("trade-republic-uapi")
 except PackageNotFoundError:
     __version__ = "unknown"

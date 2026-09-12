@@ -19,7 +19,7 @@ Lightweight & Fast unofficial REST API for Trade Republic
 ### Option 1: via pip (recommended)
 ```bash
   pip install trade-republic-uapi
-  traderep-uapi
+  trade-republic-uapi
 ```
 
 ### Option 2: from source (development)

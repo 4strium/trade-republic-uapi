@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "trade-republic-uapi"
-version = "1.0.1"
+version = "1.0.2"
 description = "Lightweight & Fast unofficial REST API for Trade Republic"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ Homepage = "https://github.com/4strium/trade-republic-uapi"
 Repository = "https://github.com/4strium/trade-republic-uapi"
 
 [project.scripts]
-traderep-uapi = "trade_republic_uapi.cli:run"
+trade-republic-uapi = "trade_republic_uapi.cli:run"
 
 [tool.setuptools.packages.find]
 include = ["trade_republic_uapi*"]
