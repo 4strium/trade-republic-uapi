@@ -18,7 +18,11 @@ from rich.panel import Panel
 from rich.rule import Rule
 
 from trade_republic_uapi.api_server import start_api_server
-from trade_republic_uapi.auth import check_authentification, get_local_ip
+from trade_republic_uapi.auth import (
+    check_authentification,
+    get_local_ip,
+    simulate_human,
+)
 from trade_republic_uapi.paths import auth_path, server_log_path, server_pid_path
 from trade_republic_uapi.preferences import (
     CLI_COLOR_STYLE,
@@ -103,8 +107,8 @@ def print_qr(data: str):
 def keep_alive(page: Page, context: BrowserContext):
     while True:
         try:
-            if check_authentification(context, page):
-                time.sleep(60)
+            if check_authentification(context):
+                simulate_human(page, 60)
             else:
                 console.print(
                     Panel(
