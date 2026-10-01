@@ -1,8 +1,8 @@
 # Trade Republic Unofficial API
 
-> ⚠️ **Disclaimer**: this project is **not affiliated with Trade Republic Bank GmbH**. Use it at your own risk, especially for endpoints that place real orders.
-
 Lightweight & Fast unofficial REST API for Trade Republic
+
+> ⚠️ **Disclaimer**: this project is **not affiliated with Trade Republic Bank GmbH**. Use it at your own risk, especially for endpoints that place real orders.
 
 ## How it works
 
@@ -48,7 +48,7 @@ All endpoints are served from the base URL of your running instance (e.g. `http:
 | GET    | `/api/tickets`           | Account      | Open and closed support tickets                                            |
 | GET    | `/api/card`              | Card         | Debit card details (status, cardholder, security settings...)              |
 | GET    | `/api/interests`         | Account      | Interest rate applied to cash in the default account                       |
-| GET    | `/api/orders`            | Orders       | Last 500 orders per  account                                               |
+| GET    | `/api/orders`            | Orders       | Active orders per account                                                 |
 | GET    | `/api/transactions`      | Account      | Last 500 timeline transactions (trades, dividends, payments...)            |
 | GET    | `/api/portfolio`         | Portfolio    | Current positions per account, enriched with stock details                 |
 | GET    | `/api/accounts`          | Account      | Accounts with cash balances (`cashAmount`, `availableCashAmount`)          |
@@ -60,7 +60,7 @@ All endpoints are served from the base URL of your running instance (e.g. `http:
 | Method | Path                     | Tag          | Description                                                                | Body schema              |
 |--------|--------------------------|--------------|----------------------------------------------------------------------------|---------------------------|
 | POST   | `/api/accounts-history`  | Portfolio    | Historical portfolio value per account, over a time range                  | [`AccountHistoryRequest`](#accounthistoryrequest)   |
-| POST   | `/api/search-instruments`| Instruments  | Search for an instrument with Trade Republic's search engine               | [`SearchInstrumentsRequest`](#searchsnstrumentsrequest)          |
+| POST   | `/api/search-instruments`| Instruments  | Search for an instrument with Trade Republic's search engine               | [`SearchInstrumentsRequest`](#searchinstrumentsrequest)          |
 | POST   | `/api/schedule-exchange` | Instruments  | Trading schedule of an exchange                                            | [`ExchangeSymbol`](#exchangesymbol)          |
 | POST   | `/api/instrument-history`| Instruments  | Historical price series of an instrument, over a time range                | [`InstrumentHistory`](#instrumenthistory)       |
 | POST   | `/api/instrument`        | Instruments  | General details about an instrument (name, type, exchanges...)             | [`Instrument`](#instrument)              |
