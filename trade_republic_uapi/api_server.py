@@ -20,6 +20,7 @@ APPROVED_EXCHANGES = Literal["LSX", "TDG", "TIB", "XETR", "XMIL", "XPAR", "XWBO"
 APPROVED_MODES = Literal["stopMarket", "market", "limit"]
 APPROVED_RANGES = Literal["1d", "5d", "1m", "1y", "max"]
 APPROVED_VALIDITY = Literal["GFD", "GTD", "GTC"]
+APPROVED_VALUES = Literal["stock", "fund", "derivative", "bond", "crypto", "privateFund", "mutualFund"]
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
 
@@ -59,6 +60,18 @@ app = FastAPI(
     dependencies=[Depends(verify_api_key)],
 )
 
+class SearchInstrumentsRequest(BaseModel):
+    query: str = Field(
+        ...,
+        description="Search query for instruments.",
+        examples=["Thales", "Bitcoin"],
+    )
+    value: APPROVED_VALUES = Field(
+        ...,
+        description="Value of the instrument type to filter by.",
+        examples=["stock", "crypto"],
+    )
+    
 
 class ExchangeSymbol(BaseModel):
     """Identifies a stock exchange, used to fetch its trading schedule."""
@@ -598,6 +611,36 @@ async def get_accounts_activity() -> list[Any]:
 
     return logs["items"]
 
+
+@app.post(
+  "/api/search-instruments",
+  tags=["Instruments"],
+  summary="Search for instruments",
+  description="Search for instruments by name",
+)
+async def search_instruments(request: SearchInstrumentsRequest) -> list[Any]:
+    query_payload = {
+      "type": "neonSearch",
+      "data": {
+        "q": request.query,
+        "page": 1,
+        "pageSize": 10,
+        "filter": [
+          {"key": "type", "value": request.value},
+          {"key": "jurisdiction", "value": load_preferences().get("jurisdiction")}
+        ]
+      },
+      "__headers": {
+        "traceparent": generate_traceparent()
+      }
+    }
+
+    results = cast(dict[str, Any], await call_tr_ws_api(query_payload, 240))
+
+    for result in results["results"]:
+        result["imageId"]= "https://assets.traderepublic.com/img/" + result["imageId"] + "/dark.svg"
+
+    return results["results"]
 
 @app.post(
     "/api/schedule-exchange",

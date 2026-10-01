@@ -2,10 +2,6 @@
 
 > ⚠️ **Disclaimer**: this project is **not affiliated with Trade Republic Bank GmbH**. Use it at your own risk, especially for endpoints that place real orders.
 
-<p align="center">
-  <img src="https://github.com/4strium/trade-republic-uapi/blob/main/ressources/TradeRepublicUAPI_demo.gif?raw=true" width="80%" alt="">
-</p>
-
 Lightweight & Fast unofficial REST API for Trade Republic
 
 ## How it works
@@ -50,32 +46,38 @@ All endpoints are served from the base URL of your running instance (e.g. `http:
 |--------|--------------------------|--------------|----------------------------------------------------------------------------|
 | GET    | `/api/personal-details`  | Account      | Personal details + banking info (IBAN/BIC) of the customer                 |
 | GET    | `/api/tickets`           | Account      | Open and closed support tickets                                            |
-| GET    | `/api/card`              | Card         | Debit card details (status, cardholder, security settings...)             |
-| GET    | `/api/interests`         | Account      | Interest rate applied to cash in the default account                      |
-| GET    | `/api/orders`            | Orders       | Last 500 orders per securities account                                    |
-| GET    | `/api/transactions`      | Account      | Last 500 timeline transactions (trades, dividends, payments...)           |
-| GET    | `/api/portfolio`         | Portfolio    | Current positions per account, enriched with stock details                |
+| GET    | `/api/card`              | Card         | Debit card details (status, cardholder, security settings...)              |
+| GET    | `/api/interests`         | Account      | Interest rate applied to cash in the default account                       |
+| GET    | `/api/orders`            | Orders       | Last 500 orders per  account                                               |
+| GET    | `/api/transactions`      | Account      | Last 500 timeline transactions (trades, dividends, payments...)            |
+| GET    | `/api/portfolio`         | Portfolio    | Current positions per account, enriched with stock details                 |
 | GET    | `/api/accounts`          | Account      | Accounts with cash balances (`cashAmount`, `availableCashAmount`)          |
-| GET    | `/api/price-alarms`      | Price Alarms | List all configured price alarms                                          |
-| GET    | `/api/accounts-activity` | Account      | Timeline activity log (logins, actions...)                                |
+| GET    | `/api/price-alarms`      | Price Alarms | List all configured price alarms                                           |
+| GET    | `/api/accounts-activity` | Account      | Timeline activity log (logins, actions...)                                 |
 
 ### POST endpoints
 
-| Method | Path                     | Tag          | Description                                                        | Body schema              |
+| Method | Path                     | Tag          | Description                                                                | Body schema              |
 |--------|--------------------------|--------------|----------------------------------------------------------------------------|---------------------------|
-| POST   | `/api/schedule-exchange` | Instruments  | Trading schedule of an exchange                                           | [`ExchangeSymbol`](#exchangesymbol)          |
-| POST   | `/api/accounts-history`  | Portfolio    | Historical portfolio value per account, over a time range                 | [`AccountHistoryRequest`](#accounthistoryrequest)   |
-| POST   | `/api/instrument-history`| Instruments  | Historical price series of an instrument, over a time range               | [`InstrumentHistory`](#instrumenthistory)       |
-| POST   | `/api/instrument`        | Instruments  | General details about an instrument (name, type, exchanges...)            | [`Instrument`](#instrument)              |
-| POST   | `/api/tr-instrument`     | Instruments  | Trade Republic's home exchange for an instrument                          | [`Instrument`](#instrument)              |
-| POST   | `/api/order-price`       | Orders       | Live buy/sell price quote for an instrument                               | [`OrderPrice`](#orderprice)              |
-| POST   | `/api/order-fees`        | Orders       | Simulates an order and returns its fees (no order is placed)              | [`Order`](#order) (`validity` optional) |
-| POST   | `/api/place-order`       | Orders       | **Places a real order** ⚠️                                                | [`Order`](#order) (`validity` required) |
-| POST   | `/api/cancel-order`      | Orders       | Cancels an open order                                                     | [`OrderId`](#orderid)                 |
-| POST   | `/api/set-price-alarm`   | Price Alarms | Creates a new price alarm                                                 | [`PriceAlarm`](#pricealarm)              |
-| POST   | `/api/delete-price-alarm`| Price Alarms | Deletes an existing price alarm                                           | [`PriceAlarmId`](#pricealarmid)            |
+| POST   | `/api/accounts-history`  | Portfolio    | Historical portfolio value per account, over a time range                  | [`AccountHistoryRequest`](#accounthistoryrequest)   |
+| POST   | `/api/search-instruments`| Instruments  | Search for an instrument with Trade Republic's search engine               | [`SearchInstrumentsRequest`](#searchsnstrumentsrequest)          |
+| POST   | `/api/schedule-exchange` | Instruments  | Trading schedule of an exchange                                            | [`ExchangeSymbol`](#exchangesymbol)          |
+| POST   | `/api/instrument-history`| Instruments  | Historical price series of an instrument, over a time range                | [`InstrumentHistory`](#instrumenthistory)       |
+| POST   | `/api/instrument`        | Instruments  | General details about an instrument (name, type, exchanges...)             | [`Instrument`](#instrument)              |
+| POST   | `/api/tr-instrument`     | Instruments  | Trade Republic's home exchange algorithm ([*Best Price*](https://traderepublic.com/en-fr/trading)) for an instrument                          | [`Instrument`](#instrument)              |
+| POST   | `/api/order-price`       | Orders       | Live buy/sell price quote for an instrument                                | [`OrderPrice`](#orderprice)              |
+| POST   | `/api/order-fees`        | Orders       | Simulates an order and returns its fees (no order is placed)               | [`Order`](#order) (`validity` optional) |
+| POST   | `/api/place-order`       | Orders       | **Places a real order** ⚠️                                                 | [`Order`](#order) (`validity` required) |
+| POST   | `/api/cancel-order`      | Orders       | Cancels an open order                                                      | [`OrderId`](#orderid)                 |
+| POST   | `/api/set-price-alarm`   | Price Alarms | Creates a new price alarm                                                  | [`PriceAlarm`](#pricealarm)              |
+| POST   | `/api/delete-price-alarm`| Price Alarms | Deletes an existing price alarm                                            | [`PriceAlarmId`](#pricealarmid)            |
 
 ### Schemas
+
+#### SearchInstrumentsRequest
+```jsonc
+{ "query": "Thales", "value": "stock" } // value: stock, fund, derivative, bond, crypto, privateFund, mutualFund
+```
 
 #### ExchangeSymbol
 ```jsonc
@@ -83,11 +85,13 @@ All endpoints are served from the base URL of your running instance (e.g. `http:
 ```
 
 #### InstrumentHistory
+*You can get the ISIN code for any instrument (stock, ETF, crypto, etc.) by calling `/api/search-instruments`.*
 ```jsonc
 { "id": "US0378331005", "range": "1m" }  // range: 1d, 5d, 1m, 1y, max
 ```
 
 #### Instrument
+*You can get the ISIN code for any instrument (stock, ETF, crypto, etc.) by calling `/api/search-instruments`.*
 ```jsonc
 { "id": "US0378331005" }  // ISIN
 ```
@@ -169,17 +173,23 @@ curl -s -X GET "http://127.0.0.1:8000/api/price-alarms" -H "X-API-Key: <api_key>
 # Account activity log
 curl -s -X GET "http://127.0.0.1:8000/api/accounts-activity" -H "X-API-Key: <api_key>"
 
-# Exchange trading schedule
-curl -s -X POST "http://127.0.0.1:8000/api/schedule-exchange" \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: <api_key>" \
-  -d '{"symbol": "XETR"}'
-
 # Portfolio value history
 curl -s -X POST "http://127.0.0.1:8000/api/accounts-history" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: <api_key>" \
   -d '{"range": "1y"}'
+
+# Instrument search request
+curl -s -X POST "http://127.0.0.1:8000/api/search-instruments" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
+  -d '{"query": "Thales", "value":"stock"}'
+
+# Exchange trading schedule
+curl -s -X POST "http://127.0.0.1:8000/api/schedule-exchange" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: <api_key>" \
+  -d '{"symbol": "XETR"}'
 
 # Instrument price history
 curl -s -X POST "http://127.0.0.1:8000/api/instrument-history" \
