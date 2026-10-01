@@ -406,9 +406,14 @@ async def get_orders() -> dict[str, Any]:
     result = {}
     for account in accounts:
         if account["productType"] != "DEFAULT":
-            orders = call_tr_rest_api(
-                f"web-trading-gateway/api/customer/v1/orders?sort=orderUpdatedAt,desc&secAccNo={account['securitiesAccountNumber']}&page=1&pageSize=500"
-            )
+            payload = {
+                "type": "orders",
+                "terminated": False,
+                "secAccNo": account["securitiesAccountNumber"],
+                "__headers": {"traceparent": generate_traceparent()},
+            }
+            orders = await call_tr_ws_api(payload, 117)
+            
             if orders is not None:
                 result[account["securitiesAccountNumber"]] = orders
 
